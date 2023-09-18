@@ -1,0 +1,1 @@
+This is a FSM Storage for aiogram 3.0+, based on SQLite and picle.
