@@ -12,22 +12,38 @@ logger = logging.getLogger(__name__)
 class SQLStorage(BaseStorage):
     
     def __init__(self, db_path: str = 'fsm_starage.db') -> None:
+        """
+        You can point a database path. It will be 'fsm_storage.db' for default.
+        """
         self.db_path = db_path
-        self.con = sqlite3.connect(self.db_path)
-        self.con.execute("CREATE TABLE IF NOT EXISTS fsm_data (key TEXT PRIMARY KEY, state TEXT, data TEXT)")
-        self.con.commit()
+        try:
+            self.con = sqlite3.connect(self.db_path)
+            self.con.execute("CREATE TABLE IF NOT EXISTS fsm_data (key TEXT PRIMARY KEY, state TEXT, data TEXT)")
+            self.con.commit()
+            logger.debug(f'FSM Storage database {self.db_path} has been opened.')
+        except sqlite3.Error as e:
+            logger.error(f'FSM Storage database opening error: {e}')
 
 
     def _key(self, key:StorageKey) -> str:
+        """
+        Create a key for every uniqe user, chat and bot
+        """
         s = str(key.bot_id) + ':' + str(key.chat_id) + ':' + str(key.user_id)
         return s
 
 
     def _ser(self, arg) -> str:
+        """
+        Serialize object
+        """
         return pickle.dumps(arg)
 
 
     def _dsr(self, s:str):
+        """
+        Deserialize object
+        """
         return pickle.loads(s)
     
 
@@ -41,9 +57,12 @@ class SQLStorage(BaseStorage):
         s_key = self._key(key)
         s_state = self._ser(state)
 
-        self.con.execute("INSERT OR REPLACE INTO fsm_data (key, state, data) VALUES (?, ?, COALESCE((SELECT data FROM fsm_data WHERE key = ?), NULL));",
-                    (s_key, s_state, s_key))
-        self.con.commit()
+        try:
+            self.con.execute("INSERT OR REPLACE INTO fsm_data (key, state, data) VALUES (?, ?, COALESCE((SELECT data FROM fsm_data WHERE key = ?), NULL));",
+                        (s_key, s_state, s_key))
+            self.con.commit()
+        except sqlite3.Error as e:
+            logger.error(f'FSM Storage database error: {e}')
 
 
     async def get_state(self, key: StorageKey) -> Optional[str]:
@@ -63,7 +82,7 @@ class SQLStorage(BaseStorage):
             else:
                 return None
         except sqlite3.Error as e:
-            logger.error("Sql error:", e)
+            logger.error(f'FSM Storage database error: {e}')
             return None
 
 
@@ -78,10 +97,12 @@ class SQLStorage(BaseStorage):
         s_key = self._key(key)
         s_data = self._ser(data)
 
-        self.con.execute("INSERT OR REPLACE INTO fsm_data (key, state, data) VALUES (?, COALESCE((SELECT state FROM fsm_data WHERE key = ?), NULL), ?);",
-                    (s_key, s_key, s_data))
-        self.con.commit()
-
+        try:
+            self.con.execute("INSERT OR REPLACE INTO fsm_data (key, state, data) VALUES (?, COALESCE((SELECT state FROM fsm_data WHERE key = ?), NULL), ?);",
+                        (s_key, s_key, s_data))
+            self.con.commit()
+        except sqlite3.Error as e:
+            logger.error(f'FSM Storage database error: {e}')
 
     
     async def get_data(self, key: StorageKey) -> Dict[str, Any]:
@@ -101,7 +122,7 @@ class SQLStorage(BaseStorage):
             else:
                 return None
         except sqlite3.Error as e:
-            logger.error("Sql error:", e)
+            logger.error(f'FSM Storage database error: {e}')
             return None
 
 
@@ -127,3 +148,4 @@ class SQLStorage(BaseStorage):
         Close storage (database connection, file or etc.)
         """
         self.con.close()
+        logger.debug(f'FSM Storage database {self.db_path} has been closed.')
