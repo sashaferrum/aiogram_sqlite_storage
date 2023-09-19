@@ -75,10 +75,13 @@ class SQLStorage(BaseStorage):
         s_key = self._key(key)
 
         try:
-            s_state = self.con.execute("SELECT state FROM fsm_data WHERE key = ?", (s_key,)).fetchone()[0]
+            s_state = self.con.execute("SELECT state FROM fsm_data WHERE key = ?", (s_key,)).fetchone()
             
             if s_state:
-                return self._dsr(s_state)
+                if s_state[0]:
+                    return self._dsr(s_state[0])
+                else:
+                    return None
             else:
                 return None
         except sqlite3.Error as e:
@@ -115,10 +118,13 @@ class SQLStorage(BaseStorage):
         s_key = self._key(key)
 
         try:
-            s_data = self.con.execute("SELECT data FROM fsm_data WHERE key = ?", (s_key,)).fetchone()[0]
+            s_data = self.con.execute("SELECT data FROM fsm_data WHERE key = ?", (s_key,)).fetchone()
             
             if s_data:
-                return self._dsr(s_data)
+                if s_data[0]:
+                    return self._dsr(s_data)
+                else:
+                    return None
             else:
                 return None
         except sqlite3.Error as e:
