@@ -9,9 +9,10 @@ pip install aiogram-sqlite-storage
 
 ## Usage:
 ```python
+from aiogram import Dispatcher
+
 # Import SQLStorage class
 from aiogram_sqlite_storage.sqlitestore import SQLStorage
-from aiogram import Dispatcher
 
 # Initialise a storage
 # Path to a database is optional. 'fsm_starage.db' will be created for default.
