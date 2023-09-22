@@ -4,6 +4,7 @@ from typing import Any, Dict, Optional
 
 import sqlite3
 import pickle
+import json
 
 import logging
 logger = logging.getLogger(__name__)
@@ -11,11 +12,18 @@ logger = logging.getLogger(__name__)
 
 class SQLStorage(BaseStorage):
     
-    def __init__(self, db_path: str = 'fsm_starage.db') -> None:
+    def __init__(self, db_path: str = 'fsm_starage.db', serializing_method: str = 'picle') -> None:
         """
         You can point a database path. It will be 'fsm_storage.db' for default.
+        It's possible to choose srtializing method: 'pickle' (default) or 'json'. If you hange serializing method, you shoud delete existing database, and start a new one.
         """
         self.db_path = db_path
+        self.ser_m = serializing_method
+
+        if self.ser_m != 'picle' and self.ser_m != 'json':
+            logger.warning(f"'{self.ser_m}' is unknown serializing method! A 'picle' will be used.")
+            self.ser_m = 'picle'
+
         try:
             self.con = sqlite3.connect(self.db_path)
             self.con.execute("CREATE TABLE IF NOT EXISTS fsm_data (key TEXT PRIMARY KEY, state TEXT, data TEXT)")
@@ -33,18 +41,38 @@ class SQLStorage(BaseStorage):
         return s
 
 
-    def _ser(self, arg) -> str:
+    def _ser(self, obj) -> str:
         """
         Serialize object
         """
-        return pickle.dumps(arg)
+        try:
+            match self.ser_m:
+                case 'picle':
+                    return pickle.dumps(obj)
+                case 'json':
+                    return json.dumps(obj)
+                case _:
+                    return pickle.dumps(obj)
+        except Exception as e:
+            logger.error(f'Serializing error! {e}')
+            return None
 
 
-    def _dsr(self, s:str):
+    def _dsr(self, string:str) -> object:
         """
         Deserialize object
         """
-        return pickle.loads(s)
+        try:
+            match self.ser_m:
+                case 'picle':
+                    return pickle.loads(string)
+                case 'json':
+                    return json.loads(string)
+                case _:
+                    return pickle.loads(string)
+        except Exception as e:
+            logger.error(f'Deserializing error! Probably, unsupported serializing method was used. {e}')
+            return None
     
 
     async def set_state(self, key: StorageKey, state: State = None) -> None:
@@ -122,7 +150,7 @@ class SQLStorage(BaseStorage):
             
             if s_data:
                 if s_data[0]:
-                    return self._dsr(s_data)
+                    return self._dsr(s_data[0])
                 else:
                     return None
             else:
