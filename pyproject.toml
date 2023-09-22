@@ -4,11 +4,11 @@ build-backend = "hatchling.build"
 
 [project]
 name = "aiogram_sqlite_storage"
-version = "0.2.1"
+version = "0.9.0"
 authors = [
   { name="Aleksandr Zheleznov" },
 ]
-description = "A FSM Storage for aiogram 3.0+, based on SQLite and picle."
+description = "A FSM Storage for aiogram 3.0+, based on SQLite."
 readme = "README.md"
 requires-python = ">=3.8"
 classifiers = [
