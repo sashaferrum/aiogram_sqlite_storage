@@ -12,17 +12,18 @@ logger = logging.getLogger(__name__)
 
 class SQLStorage(BaseStorage):
     
-    def __init__(self, db_path: str = 'fsm_starage.db', serializing_method: str = 'picle') -> None:
+    def __init__(self, db_path: str = 'fsm_starage.db', serializing_method: str = 'pickle') -> None:
         """
         You can point a database path. It will be 'fsm_storage.db' for default.
         It's possible to choose srtializing method: 'pickle' (default) or 'json'. If you hange serializing method, you shoud delete existing database, and start a new one.
+        'Pickle' is slower than 'json', but it can serialize some kind of objects, that 'json' cannot. 'Pickle' creates unreadable for human data in database, instead of 'json'.
         """
         self.db_path = db_path
         self.ser_m = serializing_method
 
-        if self.ser_m != 'picle' and self.ser_m != 'json':
-            logger.warning(f"'{self.ser_m}' is unknown serializing method! A 'picle' will be used.")
-            self.ser_m = 'picle'
+        if self.ser_m != 'pickle' and self.ser_m != 'json':
+            logger.warning(f"'{self.ser_m}' is unknown serializing method! A 'pickle' will be used.")
+            self.ser_m = 'pickle'
 
         try:
             self.con = sqlite3.connect(self.db_path)
@@ -37,45 +38,41 @@ class SQLStorage(BaseStorage):
         """
         Create a key for every uniqe user, chat and bot
         """
-        s = str(key.bot_id) + ':' + str(key.chat_id) + ':' + str(key.user_id)
-        return s
+        result_string = str(key.bot_id) + ':' + str(key.chat_id) + ':' + str(key.user_id)
+        return result_string
 
 
-    def _ser(self, obj) -> str:
+    def _ser(self, obj: object) -> str|bytes|None:
         """
         Serialize object
         """
         try:
             match self.ser_m:
-                case 'picle':
-                    return pickle.dumps(obj)
                 case 'json':
                     return json.dumps(obj)
-                case _:
+                case 'pickle' | _:
                     return pickle.dumps(obj)
         except Exception as e:
             logger.error(f'Serializing error! {e}')
             return None
 
 
-    def _dsr(self, string:str) -> object:
+    def _dsr(self, obj) -> Optional[Dict[str, Any]]:
         """
         Deserialize object
         """
         try:
             match self.ser_m:
-                case 'picle':
-                    return pickle.loads(string)
                 case 'json':
-                    return json.loads(string)
-                case _:
-                    return pickle.loads(string)
+                    return json.loads(obj)
+                case 'pickle' | _:
+                    return pickle.loads(obj)
         except Exception as e:
             logger.error(f'Deserializing error! Probably, unsupported serializing method was used. {e}')
             return None
     
 
-    async def set_state(self, key: StorageKey, state: State = None) -> None:
+    async def set_state(self, key: StorageKey, state: State|None = None) -> None:
         """
         Set state for specified key
 
@@ -83,7 +80,7 @@ class SQLStorage(BaseStorage):
         :param state: new state
         """
         s_key = self._key(key)
-        s_state = self._ser(state)
+        s_state = state.state if isinstance(state, State) else state
 
         try:
             self.con.execute("INSERT OR REPLACE INTO fsm_data (key, state, data) VALUES (?, ?, COALESCE((SELECT data FROM fsm_data WHERE key = ?), NULL));",
@@ -105,13 +102,11 @@ class SQLStorage(BaseStorage):
         try:
             s_state = self.con.execute("SELECT state FROM fsm_data WHERE key = ?", (s_key,)).fetchone()
             
-            if s_state:
-                if s_state[0]:
-                    return self._dsr(s_state[0])
-                else:
-                    return None
+            if s_state and len(s_state) > 0:
+                return s_state[0]
             else:
                 return None
+            
         except sqlite3.Error as e:
             logger.error(f'FSM Storage database error: {e}')
             return None
@@ -136,7 +131,7 @@ class SQLStorage(BaseStorage):
             logger.error(f'FSM Storage database error: {e}')
 
     
-    async def get_data(self, key: StorageKey) -> Dict[str, Any]:
+    async def get_data(self, key: StorageKey) -> Optional[Dict[str, Any]]:
         """
         Get current data for key
 
@@ -148,13 +143,11 @@ class SQLStorage(BaseStorage):
         try:
             s_data = self.con.execute("SELECT data FROM fsm_data WHERE key = ?", (s_key,)).fetchone()
             
-            if s_data:
-                if s_data[0]:
-                    return self._dsr(s_data[0])
-                else:
-                    return None
+            if s_data and len(s_data) > 0:
+                return self._dsr(s_data[0])
             else:
                 return None
+
         except sqlite3.Error as e:
             logger.error(f'FSM Storage database error: {e}')
             return None
