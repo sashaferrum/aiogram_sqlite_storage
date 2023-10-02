@@ -4,9 +4,21 @@ build-backend = "hatchling.build"
 
 [project]
 name = "aiogram_sqlite_storage"
-version = "0.9.0"
+version = "1.0.0"
 authors = [
-  { name="Aleksandr Zheleznov" },
+  { name="Aleksandr Zheleznov", email = "sasha.ferrum@gmail.com" },
+]
+keywords = [
+    "telegram",
+    "aiogram",
+    "asyncio",
+    "fsm",
+    "storage",
+    "json",
+    "pickle",
+]
+dependencies = [
+    "aiogram>=3.0.0",
 ]
 description = "A FSM Storage for aiogram 3.0+, based on SQLite."
 readme = "README.md"
