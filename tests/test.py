@@ -20,7 +20,7 @@ data = {
     'l': [1,2,3,4]
 }
 
-method = 'json' # You can use a 'picle' or a 'json' methods. A 'picle' will be used as default
+method = 'pickle' # You can use a 'pickle' or a 'json' methods. A 'pickle' will be used as default
 
 # Initiate a storage with default location
 storage = SQLStorage(serializing_method=method)
@@ -39,6 +39,11 @@ async def main():
     await state.set_state(Test_states.second_state)
     c_state = await state.get_state()
     print('After setting second state: ', c_state)
+
+    if c_state == Test_states.second_state:
+        print("State was read correctly")
+    else:
+        print("State wasn't read correctly")
 
     # Set data
     await state.set_data(data=data)
