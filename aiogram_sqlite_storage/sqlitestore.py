@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from aiogram.fsm.storage.base import BaseStorage, StorageKey
 from aiogram.fsm.state import State
 from typing import Any, Dict, Optional
@@ -47,11 +49,10 @@ class SQLStorage(BaseStorage):
         Serialize object
         """
         try:
-            match self.ser_m:
-                case 'json':
-                    return json.dumps(obj)
-                case 'pickle' | _:
-                    return pickle.dumps(obj)
+            if self.ser_m == 'json':
+                return json.dumps(obj)
+            else:
+                return pickle.dumps(obj)
         except Exception as e:
             logger.error(f'Serializing error! {e}')
             return None
@@ -62,11 +63,10 @@ class SQLStorage(BaseStorage):
         Deserialize object
         """
         try:
-            match self.ser_m:
-                case 'json':
-                    return json.loads(obj)
-                case 'pickle' | _:
-                    return pickle.loads(obj)
+            if self.ser_m == 'json':
+                return json.loads(obj)
+            else:
+                return pickle.loads(obj)
         except Exception as e:
             logger.error(f'Deserializing error! Probably, unsupported serializing method was used. {e}')
             return None
