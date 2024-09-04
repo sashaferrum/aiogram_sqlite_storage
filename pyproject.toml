@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "aiogram_sqlite_storage"
-version = "1.0.0"
+version = "1.0.1"
 authors = [
   { name="Aleksandr Zheleznov", email = "sasha.ferrum@gmail.com" },
 ]
