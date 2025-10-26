@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 class SQLStorage(BaseStorage):
     
-    def __init__(self, db_path: str = 'fsm_starage.db', serializing_method: str = 'pickle') -> None:
+    def __init__(self, db_path: str = 'fsm_storage.db', serializing_method: str = 'pickle') -> None:
         """
         You can point a database path. It will be 'fsm_storage.db' for default.
         It's possible to choose srtializing method: 'pickle' (default) or 'json'. If you hange serializing method, you shoud delete existing database, and start a new one.
